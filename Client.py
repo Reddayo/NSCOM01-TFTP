@@ -126,7 +126,7 @@ class Client:
             case "put":
                 self.sendReq(2, "chama.jpg")
             case "get":
-                self.defReq("chaa.jpg")
+                self.defReq("chama.jpg")
             case _:
                 print("Invalid command.")
             
