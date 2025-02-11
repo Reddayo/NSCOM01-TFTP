@@ -6,12 +6,65 @@ import re
 TFTP_Port = 69
 IPv4_PTRN = r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]?|0)\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]?|0)$"
 
+
+
+
+    # RRQ
+
+    # WRQ
+
+    # Data
+
+    # Ack
+
+    # Error
+
+    # OptionAck
+
+
+
+# Packet Builder Code - This should take in the opcode, 
+
+
+class PacketBuilder:
+    # No options for mode.... 
+    def build(opcode, filename):
+        packet = st.pack("!H", opcode) + b"%b\x00octet\x00" % filename.encode("ascii")
+        return packet
+
+    def buildData(block, data):
+        packet = st.pack("!H", 3) + data
+        return packet
+    
+    def buildAck(block):
+        packet = st.pack("!H", 4) + block
+        return packet
+
+    def buildErr(errorCode, errorMsg):
+        packet = st.pack("!H", 5) + errorCode + errorMsg + st.pack("!H", 5)
+        return packet
+
+
+
+# Error Builder Code - This should take in the opcode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Client:
     def __init__(self):
         self.sock = s.socket(s.AF_INET, s.SOCK_DGRAM)
-        self.client_name = None
-        self.running = True
-        self.joined = False
         self.start()
         self.destIP = "127.0.0.1"
         self.destPort = 69
@@ -34,9 +87,11 @@ class Client:
         print(packet)
         self.sock.sendto( packet, (self.destIP, TFTP_Port))
         self.sock.settimeout(5)
-        h, a = self.sock.recvfrom(512)
-
-        print("Server: ", h, a)
+        try:
+            h, a = self.sock.recvfrom(512)
+        except Exception as e:
+            print(f"Error receiving data: {e}")
+            return
 
         i = 1
         with open(filename, "rb") as file:
