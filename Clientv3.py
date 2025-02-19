@@ -2,11 +2,13 @@
 # Written by reddayo
 
 # Issues.
-# Error code 5 has not been made
-# Error code 8 has not been made
+# Error code 5 has not been made Error code done
+# Error code 8 has not been made Error code done
 # The following is a piece of unrefactored horse manure code
-# OACK IS NOT FULLY DONE - WE DONT HAVE CODE TO SEND OACK IN CASE WE NEED TO TO THE SERVER
-# TURN THIS MFER INTO KEYS AND VALUES
+# Make a combine file thingy
+# read the rfc again
+# handle duplicate acks
+
 
 import socket as soc
 import os
@@ -29,19 +31,19 @@ IPv4_PTRN = r"^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]?|0)\.){3}(25[0-5]|2[
 class Clientv3:
 
     def __init__(self):
-        self.destIP =  "192.168.59.1"
+        self.destIP =  "127.0.0.1"
         self.sock = soc.socket(soc.AF_INET, soc.SOCK_DGRAM)
         self.sock.settimeout(5)
         self.running = True
         self.start()
 
     def start(self):
-        print("Welcome to the TFTP Client")
+        print("Welcome to the TFTP Client!")
         print("Client Version 3.2")
-        print("Author: Jusper Angelo Cesar")
+        print("Author: Jusper Angelo M. Cesar")
         print("")
-        print("No destination IP set. Use 'set-dest' to configure.")
-        print("Type ? for help.")
+        print("Default destination IP set as 127.0.0.1. Use 'set-dest' to configure.")
+        print("Enter ? for commands.")
         while self.running:
             user_input = input(">> ").strip()
             self.switchCase(user_input)
@@ -74,10 +76,11 @@ class Clientv3:
 
         if command in {"put", "get"}:
             if len(args) < 1:
-                print(f"[ERR] Invalid Syntax: {command} [filename] [options]")
+                print(f"[ERR] Invalid Syntax: {command} [file] [options]")
                 return
 
             filename = None
+            output_filename = None
             blksize = 512
             tsize = False
             seen_flags = set()
@@ -109,6 +112,16 @@ class Clientv3:
                     tsize = True
                     seen_flags.add("tsize")
 
+                elif arg == "-o":
+                    if output_filename:
+                        print("[ERR] Duplicate output flag detected.")
+
+                    if i + 1 >= len(args):
+                        print("[ERR] Missing or invalid output name.")
+                        return
+                    output_filename = args[i+1]
+                    i += 1
+    
                 elif filename is None:  # First argument (filename)
                     filename = arg
 
@@ -121,8 +134,11 @@ class Clientv3:
             if filename is None:
                 print(f"[ERR] Invalid Syntax: {command} [filename] [options]")
                 return
+            
+            if output_filename is None:
+                output_filename = filename
 
-            command_map[command](filename, blksize, tsize)
+            command_map[command](filename, output_filename, blksize, tsize)
 
         elif command == "set-dest":
             if len(args) != 1:
@@ -262,7 +278,7 @@ class Clientv3:
     
     # Commands
 
-    def put(self, filename, blksize, tsize):
+    def put(self, filename, output_filename,  blksize, tsize):
         # Build the WRQ packet
 
         if not os.path.exists(filename):
@@ -278,7 +294,7 @@ class Clientv3:
             options["tsize"] = os.path.getsize(filename)
 
         # Send the WRQ packet 
-        self.sock.sendto(self.requestMaker(2, filename, options), (self.destIP, TFTP_Port))
+        self.sock.sendto(self.requestMaker(2, output_filename, options), (self.destIP, TFTP_Port))
         
         # Receive OACK/ACK/ERROR packet
         try:
@@ -339,7 +355,7 @@ class Clientv3:
 
         # Process the received packet
 
-    def get(self, filename, blksize, tsize):
+    def get(self, filename, output_filename, blksize, tsize):
         # Build the RRQ packet
         options = {}
 
@@ -364,7 +380,7 @@ class Clientv3:
         opcode = int.from_bytes(r_packet[0:2], "big")
 
         if opcode == 3:
-           self.getFiles(1, filename, r_packet, tid, 512)
+           self.getFiles(1, output_filename, r_packet, tid, 512)
            return
         
         if opcode == 5:
@@ -378,7 +394,7 @@ class Clientv3:
 
             # ITS ONLY 0 IF THERE IS AN OPTION THAT WAS ACKNOLEDGED
             start = 0 if blksize != 512 or tsize != 0 else 1
-            self.getFiles(start, filename, r_packet, tid, blksize)
+            self.getFiles(start, output_filename, r_packet, tid, blksize)
         
     def set_dest(self, ip):
         if re.match(IPv4_PTRN, ip):
@@ -404,8 +420,9 @@ class Clientv3:
         print("  ?                              show this help message")
         print("")
         print("Options:")
-        print(" -b [value]                      block size option")
-        print(" -t                              transfer size option")
+        print(" -b [value]                      tftp block size option")
+        print(" -t                              tftp transfer size option")
+        print(" -o [file]                       rename output file")
 
 if __name__ == "__main__":
     client = Clientv3()
