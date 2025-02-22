@@ -1,5 +1,5 @@
 # A simple TFTP client with options extension implementation
-# Written by Jusper Angelo M. Cesar
+# Developed by Jusper Angelo M. Cesar
 # In accordance with the requirements of NSCOM01 Machine Project 1
 
 # This client is designed to interact with a TFTP server to transfer files using the TFTP protocol.
@@ -47,7 +47,8 @@ class TFTPClient:
         # setting a timeout of 5 seconds
         self.timeout = 5
         self.sock.settimeout(self.timeout)
-        # Maximum amount of retries
+        # Maximum amount of retries - was gonna implement more for this
+        # but it's too late to add more to it or remove it
         self.max_retries = 0
         # mapping the commands
         self.command_map = {
@@ -381,7 +382,7 @@ class TFTPClient:
                         print(f"[ERR] Failed to receive next DATA packet: {e}")
                         return
 
-            print("[INFO] File transfer complete.")
+            
         except IOError as io_err:
             print(f"[ERR] Failed to write to file '{filename}': {io_err}")
 
@@ -469,7 +470,7 @@ class TFTPClient:
                     self.sock.sendto(packet, tid)
                     continue
                 else:
-                    print(f"[WARN] Timeout reached, aborting transfer.")
+                    print(f"[ERR] Failed to receive next ACK packet")
                     return False
             except Exception as e:
                 print(f"[ERR] {e}")
