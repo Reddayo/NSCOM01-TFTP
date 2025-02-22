@@ -13,7 +13,7 @@ options extension. It allows the client to negotiate block size and transfer siz
 ## Usage
 Run the client:
 ```sh
-python tftp_client.py
+python TFTPClient.py
 ```
 
 Once started, the client will enter interactive mode, where you can type commands:
